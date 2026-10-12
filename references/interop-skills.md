@@ -1,16 +1,17 @@
 # Interopérabilité avec les autres skills
 
-Ce fichier décrit comment le Bayesian Updater s'interface avec les autres skills de l'écosystème IRIS∞, en particulier *Signaux du Futur*, *Miroir Trans-échelle* et *Calibration Engine*.
+Ce fichier décrit comment le Bayesian Updater s'interface avec les autres skills de l'écosystème IRIS∞ : les skills du cluster prédictif (`superforecasting-protocol`, `calibration-engine`, `prediction-engine`) et des skills **externes à ce dépôt** (*Signaux du Futur*, *Miroir Trans-échelle*, *Hacking Narratif*, *Fractales du Destin*). Ces derniers ne sont pas livrés ici : les interfaces décrites supposent qu'ils sont installés séparément.
 
 ---
 
 ## Architecture de flux
 
 ```
-Signaux du Futur ──────────────────────┐
+Superforecasting Protocol ─────────────┐
+Signaux du Futur (externe) ────────────┤
   (hypothèses H1/H2/H3 + probas)       │
                                         ▼
-Miroir Trans-échelle ──────────►  BAYESIAN UPDATER
+Miroir Trans-échelle (externe) ►  BAYESIAN UPDATER
   (convergences P3 avec probas)         │
                                         │ posteriors
                                         ▼
@@ -59,18 +60,22 @@ Le Bayesian Updater produit les posteriors P(Hk|E) qui **remplacent** les priors
 
 La Passe 3 (carte de résonance) de Miroir Trans-échelle peut produire des **convergences fortes** entre lecture symbolique et analytique. Ces convergences constituent des observations mises à jour en bayésien, avec précautions.
 
-**Règle du cap narrative attractor** (reprise de `interop-skills.md` de Calibration Engine) :
+**Règle du cap narrative attractor** (commune avec `references/interop-skills.md` de `calibration-engine`) :
 
-> Une convergence forte P1+P2 dans Miroir Trans-échelle ne peut augmenter la probabilité OSINT de base de plus de **+0.10** via une mise à jour bayésienne.
+> Une convergence forte P1+P2 dans Miroir Trans-échelle ne peut augmenter la probabilité OSINT de base de plus de **+0.10**, quel que soit le prior.
+
+**Correction (v1.1).** La version 1.0 imposait P(E|H) ≤ 0.75 et P(E|¬H) ≥ 0.40, soit BF ≤ 1.875. Or la hausse maximale qu'un BF peut produire sur l'ensemble des priors vaut (√BF − 1)/(√BF + 1) : pour BF = 1.875, elle atteint **+0.156**, ce qui viole le plafond annoncé. Pour garantir Δ ≤ +0.10, il faut BF ≤ ((1 + 0.10)/(1 − 0.10))² ≈ **1.49**.
 
 **Procédure** :
 
 1. Identifier la convergence forte dans la carte de résonance.
 2. Formuler E : *"La lecture symbolique et la lecture OSINT convergent sur [dynamique X]."*
-3. Estimer les vraisemblances en appliquant la règle :
-   - P(E|H) ≤ 0.75 (limiter la vraisemblance symbolique)
-   - P(E|¬H) ≥ 0.40 (ne pas sous-estimer la vraisemblance hors hypothèse)
-4. Le BF résultant est plafonné à ≈ 1.5–2.0 — "modeste mais réel".
+3. Éliciter les vraisemblances auprès de l'utilisateur, dans les bornes :
+   - P(E|H) ≤ 0.75 (limiter la vraisemblance symbolique) ;
+   - P(E|¬H) ≥ 0.50 (une convergence narrative est fréquente même quand H est fausse).
+   Ces bornes donnent BF ≤ 1.5, soit une hausse maximale ≈ +0.101.
+4. Calculer avec `scripts/bayes.py simple`, puis tronquer le posterior à prior + 0.10 si nécessaire (`apply_delta_cap`). Consigner la troncature dans le motif de révision.
+5. Vérification : `python3 scripts/bayes.py cap --delta 0.10` renvoie le BF maximal compatible.
 
 **Une dissonance** (P3) produit une observation de type "signal mixte" : elle ne bascule pas fortement dans un sens, mais peut invalider une hypothèse trop certaine.
 
@@ -140,7 +145,7 @@ Quand plusieurs skills sont utilisés dans la même session et qu'une chaîne d'
 
 ## 6. Format de passation entre sessions
 
-Comme Claude n'a pas de mémoire persistante, l'état des hypothèses est maintenu dans le **log de dossier** de l'utilisateur. Format recommandé :
+L'état des hypothèses est maintenu dans un **log de dossier** tenu par l'utilisateur : selon l'environnement, l'agent peut ne pas disposer de mémoire entre sessions, et le log reste dans tous les cas la référence auditable. Format recommandé :
 
 ```markdown
 # Dossier [Nom] — État des hypothèses
@@ -149,9 +154,11 @@ Comme Claude n'a pas de mémoire persistante, l'état des hypothèses est mainte
 
 | Hypothèse | Probabilité actuelle | Dernière révision |
 |-----------|---------------------|------------------|
-| H1 — [libellé] | 0.696 | 2026-06-15 (BF=3.2) |
-| H2 — [libellé] | 0.068 | 2026-06-15 (BF=0.6) |
-| H3 — [libellé] | 0.236 | 2026-06-15 (BF=5.9) |
+| H1 — [libellé] | 0.697 | 2026-06-15 (BF contre le reste = 1.53) |
+| H2 — [libellé] | 0.067 | 2026-06-15 (BF contre le reste = 0.22) |
+| H3 — [libellé] | 0.236 | 2026-06-15 (BF contre le reste = 1.75) |
+
+*(Valeurs reprises de l'exemple de `mise-a-jour-multi-hypotheses.md` §4. Les BF « contre le reste » dépendent des priors des autres hypothèses ; les noter avec les vraisemblances qui les produisent.)*
 
 **Indicateurs de bascule actifs** :
 - [Indicateur A] — non déclenché
@@ -169,9 +176,10 @@ Ce fichier est fourni en contexte à chaque session pour reprendre là où on s'
 
 | Skill | Direction | Format |
 |-------|-----------|--------|
-| `signaux-du-futur` | → vers Updater | Hypothèses + probas |
-| `miroir-trans-echelle` | → vers Updater | Convergences P3 (avec cap BF) |
+| `superforecasting-protocol` | → vers Updater | Scénarios MECE + probas (fiche de prédiction) |
+| `signaux-du-futur` *(externe)* | → vers Updater | Hypothèses + probas |
+| `miroir-trans-echelle` *(externe)* | → vers Updater | Convergences P3 (BF ≤ 1.49, Δ ≤ +0.10) |
 | `calibration-engine` | ← depuis Updater | Révisions YAML |
 | `calibration-engine` | → vers Updater (Mode 3) | Log complet pour audit |
-| `hacking-narratif` | → vers Updater (indirect) | Observations narratives |
-| `fractales-du-destin` | Non directement | Prédictions dérivées seulement |
+| `hacking-narratif` *(externe)* | → vers Updater (indirect) | Observations narratives |
+| `fractales-du-destin` *(externe)* | Non directement | Prédictions dérivées seulement |

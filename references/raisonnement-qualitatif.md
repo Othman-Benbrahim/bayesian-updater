@@ -10,7 +10,7 @@ Le mode quantitatif (Mode 1 et Mode 2 du SKILL.md) requiert des vraisemblances n
 
 Le mode qualitatif est adapté quand :
 - L'analyste ne peut pas estimer les vraisemblances avec une granularité > 0.20.
-- L'observation est intrinsèquement ambigu (signaux mixtes).
+- L'observation est intrinsèquement ambiguë (signaux mixtes).
 - La situation est sans précédent historique clair.
 - On veut faire un premier tri rapide avant de choisir les observations à formaliser.
 
@@ -37,7 +37,7 @@ Le quatrième cas (surprenant partout) est un signal que les hypothèses actuell
 
 ## 3. La hiérarchie de force qualitative
 
-Quand on ne chiffre pas les vraisemblances, on peut quand même qualifier la force de la révision :
+Quand on ne chiffre pas les vraisemblances, on peut quand même qualifier la force de la révision. **Attention** : cette grille qualitative est une heuristique interne au skill, plus resserrée que l'échelle conventionnelle de `theorie-bayesienne.md` §2 (où 3–10 est « modéré »). Ses libellés ne doivent pas être mélangés avec ceux de l'échelle conventionnelle dans une même sortie ; en cas de doute, citer le BF chiffré.
 
 | Description | BF approximatif | Effet sur P(H) = 0.50 |
 |-------------|----------------|----------------------|
@@ -60,7 +60,7 @@ Un indicateur de bascule préalablement défini dans le log vient d'apparaître.
 
 *Logique bayésienne* : l'indicateur a été choisi précisément parce qu'il était attendu sous H et non sous ¬H. Son apparition est donc diagnostique.
 
-**Révision qualitative recommandée** : +0.10 à +0.25 selon la spécificité de l'indicateur.
+**Révision qualitative indicative** (heuristique interne, à confirmer par un calcul formel si la révision compte) : +0.10 à +0.25 selon la spécificité de l'indicateur.
 
 *Exemple* : la démission d'un CFO prévue comme indicateur de la trajectoire "scandale" se produit → révision à la hausse sur H3 de l'ordre de +0.15.
 
@@ -68,9 +68,9 @@ Un indicateur de bascule préalablement défini dans le log vient d'apparaître.
 
 Un indicateur attendu *sous une hypothèse* aurait dû apparaître à cette date et n'apparaît pas.
 
-*Logique bayésienne* : l'absence d'E attendu est une observation négative (voir `theorie-bayesienne.md` section 4.3).
+*Logique bayésienne* : l'absence d'E attendu est une observation négative (voir `theorie-bayesienne.md` section 4.4).
 
-**Révision qualitative recommandée** : −0.05 à −0.15 selon le délai et la certitude de l'attendu.
+**Révision qualitative indicative** (heuristique interne) : −0.05 à −0.15 selon le délai et la certitude de l'attendu.
 
 *Exemple* : l'accord de fusion aurait dû être annoncé avant fin du trimestre. Il ne l'est pas. → Révision à la baisse sur H1 de l'ordre de −0.10.
 
@@ -80,7 +80,7 @@ L'observation contredit le récit dominant du dossier sans clairement valider un
 
 *Logique bayésienne* : BF incertain mais probablement < 1 sur l'hypothèse dominante.
 
-**Révision qualitative recommandée** : −0.05 à −0.10 sur H1 (hypothèse dominante), redistribution sur H2/H3.
+**Révision qualitative indicative** (heuristique interne) : −0.05 à −0.10 sur H1 (hypothèse dominante), redistribution sur H2/H3 de façon que la somme reste égale à 1.
 
 ### Signal de type D — Convergence multi-sources
 
@@ -88,7 +88,7 @@ Plusieurs sources indépendantes confirment simultanément le même signal.
 
 *Logique bayésienne* : si les sources sont réellement indépendantes, les BF se multiplient.
 
-**Révision qualitative recommandée** : proportionnelle au degré d'indépendance. Si 3 sources indépendantes chacune à BF ≈ 3, BF global ≈ 27 → Fort.
+**Révision qualitative recommandée** : proportionnelle au degré d'indépendance. Si 3 sources réellement indépendantes ont chacune un BF ≈ 3, le BF global vaut ≈ 27 (« fort » selon la convention 10–30).
 
 **Piège** : vérifier l'indépendance des sources. Si elles convergent toutes sur la même fuite, c'est une seule observation amplifiée, pas trois.
 
@@ -123,7 +123,7 @@ VERDICT GLOBAL :
 
 ## 6. Règles de conversion qualitative → quantitative
 
-Si après le tableau qualitatif l'utilisateur souhaite une mise à jour chiffrée approximative, appliquer ces conversions :
+Si après le tableau qualitatif l'utilisateur souhaite une mise à jour chiffrée approximative, appliquer ces conversions (heuristique interne, pas un résultat empirique) :
 
 | Révision qualitative | Δ P approximatif (depuis P = 0.50) |
 |---------------------|-----------------------------------|
@@ -160,4 +160,4 @@ Ce réflexe, pratiqué systématiquement, évite les deux erreurs opposées :
 - **La rigidité** : ne pas réviser du tout malgré des signaux forts.
 - **La réactivité** : sur-réviser à chaque nouveau signal médiatique.
 
-Tetlock a montré que les superforecasters révisent **fréquemment et modestement** plutôt que rarement et fortement. Le mode qualitatif encourage précisément ce pattern.
+Les données du Good Judgment Project montrent que les prévisionnistes les plus précis révisent **fréquemment et par petits pas** plutôt que rarement et fortement (Atanasov, Witkowski, Ungar, Mellers & Tetlock, 2020, « Small steps to accuracy », *Organizational Behavior and Human Decision Processes*, 160, 19-35). Le mode qualitatif encourage ce pattern.

@@ -1,6 +1,6 @@
 # Théorie bayésienne — Formules, intuition, forme odds
 
-Ce fichier expose le théorème de Bayes dans ses deux formes opératoires, l'intuition derrière chaque terme, l'échelle d'interprétation du Bayes Factor, et les propriétés clés pour l'usage analytique.
+Ce fichier expose le théorème de Bayes dans ses deux formes opératoires, l'intuition derrière chaque terme, les échelles conventionnelles d'interprétation du Bayes Factor et leurs limites, et les propriétés clés pour l'usage analytique. Les calculs se font avec `scripts/bayes.py`.
 
 ---
 
@@ -18,7 +18,7 @@ avec :
 P(E) = P(H) × P(E|H) + P(¬H) × P(E|¬H)
 ```
 
-### Les quatre termes
+### Les cinq termes
 
 | Terme | Nom | Signification |
 |-------|-----|--------------|
@@ -45,7 +45,7 @@ En d'autres termes :
 BF(E) = P(E|H) / P(E|¬H)
 ```
 
-Le Bayes Factor est le **rapport des vraisemblances**. Il mesure combien de fois l'observation E est plus probable sous H que sous ¬H.
+Le Bayes Factor est le **rapport des vraisemblances**. Il mesure combien de fois l'observation E est plus probable sous H que sous ¬H — **¬H étant une alternative explicitement définie**.
 
 - BF > 1 : E favorise H
 - BF = 1 : E est neutre (ne révise pas)
@@ -53,20 +53,28 @@ Le Bayes Factor est le **rapport des vraisemblances**. Il mesure combien de fois
 
 ### Avantage du Bayes Factor
 
-Le BF est indépendant du prior. Il représente **le poids intrinsèque de l'observation**. Deux analystes avec des priors différents sur H voient le même BF — mais calculent des posteriors différents. Cette séparation entre *force de l'évidence* et *état initial de croyance* est fondamentale.
+Le BF est indépendant du prior. Il représente **le poids de l'observation relativement à une alternative donnée**. Deux analystes avec des priors différents sur H, mais la même définition de ¬H et les mêmes vraisemblances, voient le même BF — et calculent des posteriors différents. Cette séparation entre *force de l'évidence* et *état initial de croyance* est fondamentale.
 
-### Échelle de Jeffreys (1961)
+### Trois mises en garde
 
-| BF | Interprétation |
+1. **Le BF dépend de l'alternative.** Le BF est un rapport de vraisemblances entre deux hypothèses (Kass & Raftery, 1995). « ¬H » est presque toujours un composite (plusieurs scénarios) : P(E|¬H) est la moyenne des P(E|Hj) des alternatives, pondérée par leurs priors. Si l'on redéfinit ¬H, le BF change. Toute sortie doit donc dire ce que recouvre ¬H. En multi-hypothèses, on calcule soit des BF par paires, BF(Hi vs Hj) = P(E|Hi)/P(E|Hj), soit un BF « contre le reste » (voir `mise-a-jour-multi-hypotheses.md` §2, étape 7).
+2. **Un BF n'est pas un posterior.** BF = 10 ne signifie pas « H est vraie à 91 % » : c'est le facteur par lequel les odds du prior sont multipliées. Avec un prior de 0.01, le même BF = 10 donne un posterior de 0.09. Lire un BF comme une probabilité de H est une variante du sophisme du procureur (`elicitation-vraisemblances.md` §5, piège 1).
+3. **L'échelle d'interprétation est une convention.** Voir ci-dessous.
+
+### Échelle d'interprétation (convention hybride)
+
+| BF | Libellé conventionnel |
 |----|---------------|
 | 1 | Nul — observation neutre |
 | 1–3 | Anecdotique — légère mise à jour |
 | 3–10 | Modéré — révision significative |
 | 10–30 | Fort — révision nette |
 | 30–100 | Très fort — révision majeure |
-| > 100 | Décisif — révision quasi-complète |
+| > 100 | Décisif |
 
-**Symétrie** : BF < 1 suit la même logique inversée. Un BF = 0.10 est aussi décisif contre H qu'un BF = 10 l'est pour H.
+**Statut de cette échelle.** Ce n'est pas « l'échelle de Jeffreys » au sens strict. Les seuils 1-3-10-30-100 et les quatre premiers libellés suivent Lee & Wagenmakers (2014, qui écrivent « extreme » au-delà de 100) ; le libellé « décisif » vient de Jeffreys (1961), dont les seuils originaux sont des demi-puissances de 10 (≈ 3.2, 10, ≈ 31.6, 100). Kass & Raftery (1995) proposent encore d'autres seuils (3, 20, 150). Ces échelles sont des repères de communication : leur application mécanique peut biaiser la comparaison de modèles (Nesseris & Garcia-Bellido, 2013). Toujours donner la valeur numérique du BF ; le libellé n'est qu'une aide de lecture.
+
+**Symétrie** : un BF < 1 se lit par son inverse, contre H. BF = 0.10 pèse contre H avec la même force que BF = 10 pour H (libellé « modéré » à la limite de « fort »).
 
 ---
 
@@ -138,12 +146,12 @@ Plus le prior est extrême (proche de 0 ou 1), moins une observation même forte
 **Exemple** : P(H) = 0.01, BF = 100.
 
 ```
-O(H)   = 0.01/0.99 = 0.0101
-O(H|E) = 0.0101 × 100 = 1.01
-P(H|E) = 1.01/2.01 = 0.502
+O(H)   = 0.01/0.99 = 1/99 ≈ 0.0101
+O(H|E) = (1/99) × 100 = 100/99 ≈ 1.0101
+P(H|E) = 100/199 ≈ 0.503
 ```
 
-Malgré un BF de 100 (décisif sur l'échelle de Jeffreys), une hypothèse initiale à 1% n'atteint que 50% après l'observation. C'est le fondement de l'**asymétrie de révision** : il est très difficile de passer de "presque impossible" à "probable" en une seule observation.
+Malgré un BF de 100 (« très fort », à la limite de « décisif » selon la convention ci-dessus), une hypothèse initiale à 1 % n'atteint qu'environ 50 % après l'observation. C'est le fondement de l'**asymétrie de révision** : il est très difficile de passer de "presque impossible" à "probable" en une seule observation.
 
 ### 4.2 L'indépendance conditionnelle
 
@@ -173,7 +181,7 @@ P(E|¬H)   = 1 − P(indicateur | ¬H) ← plus élevé si ¬H ne le prédit pas
 
 ### Prior à 0 ou 1
 
-Mathématiquement, si P(H) = 0, alors P(H|E) = 0 quelles que soient les preuves. Un prior à 0 signifie une impossibilité absolue — aucune preuve ne peut changer cela. C'est précisément pourquoi les priors à 0 et 1 sont **interdits** en pratique analytique (voir `protocole-enregistrement.md` dans *Calibration Engine*).
+Mathématiquement, si P(H) = 0, alors P(H|E) = 0 quelles que soient les preuves. Un prior à 0 signifie une impossibilité absolue — aucune preuve ne peut changer cela (règle de Cromwell, Lindley). C'est pourquoi les priors à 0 et 1 sont **interdits** en pratique analytique ; l'écosystème admet la plage [0.01 ; 0.99] (voir `references/protocole-enregistrement.md` dans `calibration-engine`).
 
 ### Vraisemblances à 0 ou 1
 
@@ -204,3 +212,5 @@ Un BF de 10 = 1 ban. Un BF de 100 = 2 bans. Un BF de 3.16 = 0.5 ban (demi-ban).
 - Good, I. J. (1950). *Probability and the Weighing of Evidence*. Griffin.
 - Jaynes, E. T. (2003). *Probability Theory: The Logic of Science*. Cambridge University Press.
 - Kass, R. E., & Raftery, A. E. (1995). Bayes factors. *Journal of the American Statistical Association*, 90(430), 773-795.
+- Lee, M. D., & Wagenmakers, E.-J. (2014). *Bayesian Cognitive Modeling: A Practical Course*. Cambridge University Press. (Source des seuils et libellés 1-3-10-30-100.)
+- Nesseris, S., & Garcia-Bellido, J. (2013). Is the Jeffreys' scale a reliable tool for Bayesian model comparison in cosmology? *Journal of Cosmology and Astroparticle Physics*, 2013(08), 036. arXiv:1210.7652.

@@ -42,6 +42,10 @@ Pour chaque hypothèse Hk, appliquer le protocole d'élicitation (voir `elicitat
 
 > *"En supposant que ces trois hypothèses soient les seules possibles, quelle est celle sous laquelle E est le plus attendu ? Le moins attendu ?"*
 
+### Étapes 4 à 7 — Calcul (via `scripts/bayes.py multi`)
+
+Le script effectue les étapes 4 à 7, refuse des priors qui ne somment pas à 1 (± 0.01) et vérifie que les posteriors somment à 1. Le détail ci-dessous sert à comprendre et à vérifier.
+
 ### Étape 4 — Calculer les numérateurs
 
 ```
@@ -61,17 +65,22 @@ P(E) = Σ num_k = num_1 + num_2 + num_3
 P(Hk|E) = num_k / P(E)
 ```
 
-Vérification : Σ P(Hk|E) = 1.00
+Vérification : Σ P(Hk|E) = 1.000 exactement (aux arrondis d'affichage près). Un total de 1.007 n'est pas « ≈ 1 » : c'est le signe d'une erreur de calcul ou de normalisation.
 
-### Étape 7 — Calculer les Bayes Factors et Likelihood Ratios
+### Étape 7 — Calculer les Bayes Factors
 
-Pour chaque hypothèse, calculer le rapport de vraisemblance par rapport à la "moyenne" des autres :
+Un BF est toujours relatif à une alternative définie. Deux lectures complémentaires :
+
+**BF « contre le reste »** — Hk face à l'ensemble des autres hypothèses. La vraisemblance du « reste » est la moyenne des vraisemblances des autres hypothèses **pondérée par leurs priors** :
 
 ```
-LR(Hk) = P(E|Hk) / P(E)_moyen_autres_hypothèses
+P(E|¬Hk) = Σ_{j≠k} P(Hj) × P(E|Hj) / (1 − P(Hk))  =  (P(E) − num_k) / (1 − P(Hk))
+BF(Hk vs reste) = P(E|Hk) / P(E|¬Hk)
 ```
 
-Ou plus simplement, comparer les vraisemblances deux à deux :
+Ce BF dépend des priors des autres hypothèses : il change si on redistribue les probabilités entre elles.
+
+**BF par paires** — indépendant des priors :
 
 ```
 BF(H1 vs H2) = P(E|H1) / P(E|H2)
@@ -92,11 +101,12 @@ OBSERVATION : [E]
 │ H2 — [libellé court]    │ P₂     │ L₂       │ P₂ × L₂       │ P₂'      │
 │ H3 — [libellé court]    │ P₃     │ L₃       │ P₃ × L₃       │ P₃'      │
 ├─────────────────────────┼────────┼──────────┼───────────────┼──────────┤
-│ TOTAL                   │ 1.000  │  —       │ = P(E)        │ ≈ 1.000  │
+│ TOTAL                   │ 1.000  │  —       │ = P(E)        │ 1.000    │
 └─────────────────────────┴────────┴──────────┴───────────────┴──────────┘
 
 Δ (variation de rang ou de dominance) : [commentaire]
-BF(H1 vs H2) : L₁/L₂ = [valeur]  → [interprétation]
+BF(H1 vs H2) : L₁/L₂ = [valeur]  → [libellé conventionnel]
+BF contre le reste : [valeurs du script]
 ```
 
 ---
@@ -126,14 +136,17 @@ Observation E : *"Le conseil d'administration a voté ce matin la suspension de 
 
 ```
 num_H1 = 0.60 × 0.65 = 0.390
-num_H2 = 0.25 × 0.15 = 0.038
+num_H2 = 0.25 × 0.15 = 0.0375
 num_H3 = 0.15 × 0.88 = 0.132
 
-P(E) = 0.390 + 0.038 + 0.132 = 0.560
+P(E) = 0.390 + 0.0375 + 0.132 = 0.5595
 
-P(H1|E) = 0.390 / 0.560 = 0.696
-P(H2|E) = 0.038 / 0.560 = 0.068
-P(H3|E) = 0.132 / 0.560 = 0.236
+P(H1|E) = 0.390  / 0.5595 = 0.697
+P(H2|E) = 0.0375 / 0.5595 = 0.067
+P(H3|E) = 0.132  / 0.5595 = 0.236
+
+Somme = 1.000 ✓   (ne pas arrondir les numérateurs avant de diviser :
+                   avec 0.038 et 0.560, on obtient 0.696 / 0.068, légèrement faux)
 ```
 
 ### Tableau
@@ -142,11 +155,11 @@ P(H3|E) = 0.132 / 0.560 = 0.236
 ┌─────────────────────────────┬────────┬──────────┬─────────────┬─────────┐
 │ Hypothèse                   │ Prior  │ P(E│Hk)  │ Num.        │ Post.   │
 ├─────────────────────────────┼────────┼──────────┼─────────────┼─────────┤
-│ H1 — Cession / fusion       │ 0.600  │ 0.65     │ 0.390       │ 0.696   │
-│ H2 — Restructuration interne│ 0.250  │ 0.15     │ 0.038       │ 0.068   │
-│ H3 — Scandale bloquant      │ 0.150  │ 0.88     │ 0.132       │ 0.236   │
+│ H1 — Cession / fusion       │ 0.600  │ 0.65     │ 0.3900      │ 0.697   │
+│ H2 — Restructuration interne│ 0.250  │ 0.15     │ 0.0375      │ 0.067   │
+│ H3 — Scandale bloquant      │ 0.150  │ 0.88     │ 0.1320      │ 0.236   │
 ├─────────────────────────────┼────────┼──────────┼─────────────┼─────────┤
-│ TOTAL                       │ 1.000  │  —       │ 0.560       │ 1.000   │
+│ TOTAL                       │ 1.000  │  —       │ 0.5595      │ 1.000   │
 └─────────────────────────────┴────────┴──────────┴─────────────┴─────────┘
 ```
 
@@ -154,14 +167,18 @@ P(H3|E) = 0.132 / 0.560 = 0.236
 
 ```
 Δ rankings : H2 s'effondre (0.25 → 0.07). H3 gagne en proportion
-(0.15 → 0.24) malgré son prior faible, car très diagnostique de E.
+(0.15 → 0.24) malgré son prior faible, car E est très attendue sous H3.
 H1 reste dominante mais H3 mérite maintenant une attention réelle.
 
-BF(H3 vs H2) = 0.88 / 0.15 = 5.9 → Modéré/Fort en faveur de H3 vs H2
-BF(H1 vs H3) = 0.65 / 0.88 = 0.74 → Légèrement en faveur de H3 sur H1
+BF par paires (indépendants des priors) :
+  BF(H3 vs H2) = 0.88 / 0.15 ≈ 5.9  → « modéré » en faveur de H3 contre H2
+  BF(H1 vs H3) = 0.65 / 0.88 ≈ 0.74 → « anecdotique », légèrement en faveur de H3 contre H1
 
-CONCLUSION : E renforce H1 en termes absolus mais révèle surtout
-l'incompatibilité de H2. H3 devient une hypothèse à prendre au sérieux.
+BF contre le reste (dépendants des priors) :
+  H1 : 1.53   H2 : 0.22   H3 : 1.75
+
+CONCLUSION : E relève H1 (0.60 → 0.70) surtout parce qu'elle élimine H2 ;
+face à H3 seule, E favorise légèrement H3. H3 devient une hypothèse à prendre au sérieux.
 Recommandation : monitorer les indicateurs spécifiques à H3 (enquête,
 audits, fuites internes).
 ```

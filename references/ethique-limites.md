@@ -44,12 +44,14 @@ Avant de partager ou comparer des analyses bayésiennes, **toujours afficher exp
 
 C'est la question la plus délicate de l'analyse bayésienne. Plusieurs approches :
 
-- **Prior informatif** : basé sur un base rate historique (recommandé).
+- **Prior informatif** : basé sur un taux de base historique (recommandé).
 - **Prior de consensus** : probabilité partagée par plusieurs analystes.
-- **Prior non-informatif** : 0.50 (absence d'information préalable).
-- **Prior propre** : honnête estimation personnelle.
+- **Prior « non informatif »** : 0.50 entre deux hypothèses, ou 1/k entre k hypothèses. Attention : ce choix dépend du découpage des hypothèses et n'est donc pas neutre.
+- **Prior subjectif** : estimation personnelle honnête.
 
-En pratique, pour les dossiers politiques et stratégiques, le **prior informatif via base rate** est préférable. Voir `protocole-enregistrement.md` dans *Calibration Engine* pour la discipline de base rate.
+(« Prior propre » désigne en statistique une distribution qui s'intègre à 1 — à ne pas confondre avec un prior subjectif.)
+
+En pratique, pour les dossiers politiques et stratégiques, le **prior informatif via base rate** est préférable. Voir `references/protocole-enregistrement.md` dans `calibration-engine` et `references/base-rates-outside-view.md` dans `superforecasting-protocol` pour la discipline du taux de base.
 
 ### Le prior biaisé
 
@@ -74,7 +76,7 @@ Si les observations sont corrélées et qu'on les multiplie indépendamment, le 
 
 ### Règle de prudence
 
-Si E₁ et E₂ viennent de sources liées, traiter comme une seule observation avec BF maximal = max(BF₁, BF₂) plutôt que BF₁ × BF₂.
+Si E₁ et E₂ viennent de sources liées, traiter comme une seule observation : retenir au plus max(BF₁, BF₂) plutôt que BF₁ × BF₂. C'est une règle de prudence, pas un résultat exact : le BF correct de la paire est P(E₁,E₂|H)/P(E₁,E₂|¬H), qui exige de modéliser la dépendance.
 
 ---
 
@@ -82,9 +84,9 @@ Si E₁ et E₂ viennent de sources liées, traiter comme une seule observation 
 
 ### Cas 1 : Hypothèses non-exhaustives
 
-Si les hypothèses ne couvrent pas l'espace des possibles (violation du MECE), le théorème des probabilités totales sous-estime P(E). Le posterior est biaisé.
+Si les hypothèses ne couvrent pas l'espace des possibles (violation du MECE), la somme Σ P(Hk)P(E|Hk) omet la contribution des hypothèses manquantes : P(E) est mal estimée et la normalisation surestime les hypothèses listées.
 
-**Signal d'alerte** : si une observation arrive qui ne rentre dans aucune des hypothèses existantes (BF ≈ 0 sur tout), il faut ajouter une nouvelle hypothèse H4.
+**Signal d'alerte** : si une observation est très improbable sous **toutes** les hypothèses existantes (P(E|Hk) faible pour tout k, donc P(E) très faible), il faut envisager une nouvelle hypothèse H4 plutôt que de renormaliser mécaniquement.
 
 ### Cas 2 : Événements sans classe de référence
 
